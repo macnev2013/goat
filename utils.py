@@ -12,8 +12,8 @@ def get_str_from_dict(dict_obj):
             str_obj += f"{key}={dict_obj[key]} "
     return str_obj.strip(" ")
 
-def get_test_id(service_name, test_filename, test_name):
-    return f"{service_name}_{test_filename}_{test_name}"
+def get_test_id(service_name, test_name):
+    return f"{service_name}_{test_name}"
 
 def get_test_run_command(service_name, test_name):
     command = f"{GO_TEST_CMD} {TEST_DIR}/{service_name}/ {get_str_from_dict(TEST_ARG_PARAMS)} -run {test_name}"

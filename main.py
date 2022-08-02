@@ -18,6 +18,7 @@ def generate():
     test_manager = TestSummary()
     test_manager.scrape_tests()
     test_manager.export_test_details()
+    test_manager.save()
 
 
 @click.command(name="report", help="Generate report from test details")
@@ -25,14 +26,14 @@ def report():
     """Generate report from test details"""
     TEST_ENV_PARAMS.update(os.environ.copy())
     test_manager = TestSummary()
-    test_manager.genrate_report()
+    test_manager.generate_report()
     run_report_server()
 
 
 @click.command(name="run", help="Run tests for given services")
 @click.option("--services", "-s", default=SERVICES_TO_TEST, help="Services to test")
 @click.option("--force-run", "-f", is_flag=True, default=False,help="Run tests forcefully")
-@click.option("--test-list-file", "-t", default=TEST_LIST_FILE, help="File containing test list: localstack/test-list.yaml")
+@click.option("--test-list-file", "-t", default=TEST_LIST_FILE, help="File containing test list: ./test-list.yaml")
 def run(services, force_run, test_list_file):
     """Run tests for given services"""
     print(f"Services to test: {services}")

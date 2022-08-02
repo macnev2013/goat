@@ -3,12 +3,13 @@ import multiprocessing
 import pickle
 import re
 import os
+import signal
 import time
 import subprocess
-from attr import attr
 from colorama import Fore
 from constants import (
-    TEST_REGEX,
+    REPO_PATH,
+    TEST_DIR_REGEX,
     PICKLE_TEST_DETAILS_FILE,
     GO_PATTERN,
     TEST_LIST_FILE,
@@ -22,9 +23,8 @@ import multiprocessing.dummy
 
 
 class TestDetail:
-    def __init__(self, service_name, test_filename, test_name):
+    def __init__(self, service_name, test_name):
         self.service_name = service_name
-        self.test_filename = test_filename
         self.test_name = test_name
         self.return_code = None
         self.start_time: time
@@ -45,7 +45,7 @@ class TestDetail:
 
     @property
     def logfile_path(self):
-        return f"{LOG_PATH}/{self.service_name}/{self.test_filename}"
+        return f"{LOG_PATH}/{self.service_name}"
 
     def create_dir(self):
         os.makedirs(self.logfile_path, exist_ok=True)
@@ -66,12 +66,12 @@ class TestDetail:
         stderr = open(f"{self.logfile_path}/{self.test_name}_stderr.log", "w")
         TEST_ENV_PARAMS.update(os.environ.copy())
         results = subprocess.run(
-            command, env=TEST_ENV_PARAMS, stdout=stdout, stderr=stderr
+            command, env=TEST_ENV_PARAMS, stdout=stdout, stderr=stderr, cwd=REPO_PATH
         )
         self.return_code = results.returncode
 
     def pre_print(self):
-        print(f"{Fore.BLUE}[RUNNING] :: {self.test_filename}:{self.test_name}")
+        print(f"{Fore.BLUE}[RUNNING] :: {self.test_name}")
 
     def post_print(self):
         if self.return_code != 0:
@@ -84,12 +84,14 @@ class TestDetail:
             )
 
     def execute(self):
-        self.pre_print()
-        self.pre_tests()
-        self.run()
-        self.post_tests()
-        self.post_print()
-
+        try:
+            self.pre_print()
+            self.pre_tests()
+            self.run()
+            self.post_tests()
+            self.post_print()
+        except KeyboardInterrupt:
+            pass
 
 class TestSummary:
     test_details = {}
@@ -112,128 +114,110 @@ class TestSummary:
             with open(self.pickle_file, "rb") as file:
                 self.test_details = pickle.load(file)
                 print("Test Details Loaded.")
+        else:
+            self.scrape_tests()
+            self.save()
+            self.generate_report()
+            print("Test Details Scraped.")
 
     def scrape_tests(self):
-        for path in glob.glob(TEST_REGEX):
-            if len(path.split("/")) > 4:
-                raise Exception("Invalid Folder Structure Found")
-            service_name = path.split("/")[2]
-            test_filename = path.split("/")[3]
+        for path in glob.glob(TEST_DIR_REGEX):
+            service_name = path.split("/")[-2]
             for i, line in enumerate(open(path)):
                 for match in re.finditer(GO_PATTERN, line):
                     test_name = match[1].split("(")[0]
-                    test_id = get_test_id(service_name, test_filename, test_name)
+                    test_id = get_test_id(service_name, test_name)
                     if not self.test_details.get(test_id):
-                        self.test_details[test_id] = TestDetail(
-                            service_name, test_filename, test_name
-                        )
-
-    def generate_internal_dict(self, regenerate=False):
-        if len(self.export_dict) == 0 or regenerate:
-            for test in self.test_details.values():
-                if not self.export_dict.get(test.service_name):
-                    self.export_dict[test.service_name] = {}
-                if not self.export_dict.get(test.service_name, {}).get(
-                    test.test_filename
-                ):
-                    self.export_dict[test.service_name][test.test_filename] = []
-                self.export_dict[test.service_name][test.test_filename].append(
-                    test.test_name
-                )
+                        self.test_details[test_id] = TestDetail(service_name, test_name)
 
     def export_test_details(self):
         self.generate_internal_dict()
         file = open(self.test_list_file, "w")
         for service_name in self.export_dict:
             file.write(f"{service_name}:\n")
-            for test_filename in self.export_dict[service_name]:
-                if (
-                    len(self.export_dict.get(service_name, {}).get(test_filename, {}))
-                    > 0
-                ):
-                    # file.write(f"  {test_filename}:\n")
-                    for test_name in self.export_dict[service_name][test_filename]:
-                        file.write(f"    - {test_name}\n")
+            for test_name in self.export_dict[service_name]:
+                file.write(f"  - {test_name}\n")
+        file.close()
         print("Test Details Exported.")
+
+    def generate_internal_dict(self, force=False):
+        if len(self.export_dict) == 0 or force:
+            for test in self.test_details.values():
+                if not self.export_dict.get(test.service_name):
+                    self.export_dict[test.service_name] = []
+                self.export_dict[test.service_name].append(test.test_name)
 
     def execute_tests(self, service, force_run):
         self.generate_internal_dict()
-        pool = multiprocessing.dummy.Pool(processes=20)
+        pool = multiprocessing.dummy.Pool()
         pool_args = []
-        for test_filename in self.export_dict.get(service, {}):
-            for test_name in self.export_dict.get(service, {}).get(test_filename):
-                # command is a list of strings
-                test_id = get_test_id(service, test_filename, test_name)
-                test_detail = self.test_details.get(test_id)
-                if test_detail.completed and not force_run:
-                    print(f"[SKIP]    :: {test_detail.test_name}")
-                    continue
-                pool_args.append(test_detail)
-                self.save()
-        pool.map(TestDetail.execute, pool_args)
-        print("Pool Exited.")
-        pool.close()
-        self.save()
+        for test_name in self.export_dict[service]:
+            test_id = get_test_id(service, test_name)
+            test_detail = self.test_details.get(test_id)
+            if self.test_details[test_id].completed and not force_run:
+                print(f"[SKIP]    :: {test_detail.test_name}")
+                continue
+            pool_args.append(test_detail)
+        try:
+            pool.map(TestDetail.execute, pool_args)
+            print("Pool Exited.")
+        finally:
+            pool.close()
+            pool.terminate()
+            self.save()
+            print("Test Details Saved.")
 
-    def genrate_report(self):
-        self.generate_internal_dict()
+    def generate_report(self):
         test_report = {}
         for test_id in self.test_details:
             test_detail = self.test_details.get(test_id)
+
             if not test_detail.completed:
                 continue
+
             if not test_report.get(test_detail.service_name):
                 test_report[test_detail.service_name] = {}
-            if not test_report.get(test_detail.service_name, {}).get(
-                test_detail.test_filename
-            ):
-                test_report[test_detail.service_name][test_detail.test_filename] = {}
-            if (
-                not test_report.get(test_detail.service_name, {})
-                .get(test_detail.test_filename, {})
-                .get(test_detail.test_name)
-            ):
-                test_report[test_detail.service_name][test_detail.test_filename][
-                    test_detail.test_name
-                ] = {}
+
+            if not test_report[test_detail.service_name].get(test_detail.test_name):
+                test_report[test_detail.service_name][test_detail.test_name] = {}
 
             if test_detail.completed:
-                test_report[test_detail.service_name][test_detail.test_filename][
-                    test_detail.test_name
-                ]["return_code"] = test_detail.return_code
-                test_report[test_detail.service_name][test_detail.test_filename][
-                    test_detail.test_name
-                ]["elapsed_time"] = test_detail.elapsed_time
-                test_report[test_detail.service_name][test_detail.test_filename][
-                    test_detail.test_name
-                ]["process_elapsed_time"] = test_detail.process_elapsed_time
+                test_report[test_detail.service_name][test_detail.test_name][
+                    "return_code"
+                ] = test_detail.return_code
+                test_report[test_detail.service_name][test_detail.test_name][
+                    "elapsed_time"
+                ] = test_detail.elapsed_time
+                test_report[test_detail.service_name][test_detail.test_name][
+                    "process_elapsed_time"
+                ] = test_detail.process_elapsed_time
 
         report = open(TEST_REPORT_FILENAME, "w")
         report.write(
-            f"""<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">"""
+            f"""<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">\n"""
         )
         report.write(f"<body class='p-4'>")
         for service_name in test_report:
             report.write(f"<h3>{service_name}</h3>\n")
             report.write(f"<table border='1' class='table'>\n")
             report.write(
-                f"<tr><th>Test File</th><th>Test Name</th><th>Status</th><th>Duration</th><th>out</th><th>err</th></tr>\n"
+                f"<tr><th>Test Name</th><th>Status</th><th>Duration</th><th>out</th><th>err</th></tr>\n"
             )
-            for test_filename in test_report[service_name]:
-                for test_name in test_report[service_name].get(test_filename):
-                    td = test_report[service_name][test_filename].get(test_name)
-                    status = "PASSED" if td.get("return_code") == 0 else "FAILED"
-                    elapsed_time = td.get("elapsed_time")
-                    color = "red" if status == "FAILED" else "green"
-                    if test_report[service_name][test_filename].get(test_name):
-                        test_id = get_test_id(service_name, test_filename, test_name)
-                        test_detail = self.test_details.get(test_id)
-                        out_log = f"<a href='/{test_detail.logfile_path}/{test_detail.test_name}_stdout.log'>stdout</a>"
-                        err_log = f"<a href='/{test_detail.logfile_path}/{test_detail.test_name}_stderr.log'>stderr</a>"
-                        report.write(
-                            f"<tr style='color: {color}'><td>{test_filename}</td><td>{test_name}</td><td>{status}</td><td>{elapsed_time}</td><td>{out_log}</td><td>{err_log}</td></tr>\n"
-                        )
-            report.write("</table></body>\n")
+            for test_name in test_report[service_name]:
+                test_id = get_test_id(service_name, test_name)
+                test_detail = self.test_details.get(test_id)
+
+                status = "PASSED" if test_detail.return_code == 0 else "FAILED"
+                color = "red" if status == "FAILED" else "green"
+                elapsed_time = test_detail.elapsed_time
+
+                out_log = f"<a href='/{test_detail.logfile_path}/{test_detail.test_name}_stdout.log'>stdout</a>"
+                err_log = f"<a href='/{test_detail.logfile_path}/{test_detail.test_name}_stderr.log'>stderr</a>"
+                report.write(
+                    f"<tr style='color: {color}'><td>{test_name}</td><td>{status}</td><td>{elapsed_time}</td><td>{out_log}</td><td>{err_log}</td></tr>\n"
+                )
+
+        report.write("</table></body>\n")
         report.close()
         print("Test Reports Exported.")
 

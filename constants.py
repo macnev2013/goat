@@ -1,17 +1,18 @@
 import re
 import os
 
-PICKLE_TEST_DETAILS_FILE = "./localstack/testdetails.pickle"
+ROOT_DIR = "."
+PICKLE_TEST_DETAILS_FILE = f"{ROOT_DIR}/testdetails.pickle"
+TEST_LIST_FILE = f"{ROOT_DIR}/test-list.yaml"
+TEST_REPORT_FILENAME = f"{ROOT_DIR}/report.html"
+LOG_PATH = f"{ROOT_DIR}/logs"
 
 GO_TEST_REGEX = "^func TestAcc(.*)$"
 GO_PATTERN = re.compile(GO_TEST_REGEX)
 
-ROOT_DIR = "localstack"
-TEST_LIST_FILE = f"{ROOT_DIR}/test-list.yaml"
-TEST_REPORT_FILENAME = f"{ROOT_DIR}/report.html"
-
-TEST_DIR = "./internal/service"
-TEST_REGEX = "internal/service/**/*_test.go"
+REPO_PATH="/Users/nevilmacwan/Documents/project/terraform-provider-aws"
+TEST_DIR = f"{REPO_PATH}/internal/service"
+TEST_DIR_REGEX = f"{REPO_PATH}/internal/service/**/*_test.go"
 
 TEST_ENV_PARAMS = {
     'AWS_DEFAULT_REGION': 'us-east-1',
@@ -25,12 +26,10 @@ TEST_ARG_PARAMS = {
     '-timeout': '60m',
     '-count': '1',
 }
+
 GO_TEST_CMD = "go test"
 
-LOG_PATH = f"{ROOT_DIR}/logs"
-
 LOCALSTACK_ENDPOINT = "http://localhost:4566"
-
 SERVICES_TO_TEST = ["s3"]
 
 HTTP_SERVER_HOST = "localhost"
