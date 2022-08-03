@@ -120,6 +120,8 @@ class TestSummary:
             print("Test Details Scraped.")
 
     def scrape_tests(self):
+        if not os.path.exists(REPO_PATH):
+            raise Exception(f"Path {REPO_PATH} does not exist.")
         for path in glob.glob(TEST_DIR_REGEX):
             service_name = path.split("/")[-2]
             for i, line in enumerate(open(path)):
