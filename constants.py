@@ -1,7 +1,7 @@
 import re
 import os
 
-ROOT_DIR = "."
+ROOT_DIR = "/home/runner/work/goat/goat/terraform-provider-aws"
 PICKLE_TEST_DETAILS_FILE = f"{ROOT_DIR}/testdetails.pickle"
 TEST_LIST_FILE = f"{ROOT_DIR}/test-list.yaml"
 TEST_REPORT_FILENAME = f"{ROOT_DIR}/report.html"
