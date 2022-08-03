@@ -27,6 +27,11 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   goat:
+    needs: goat-prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.goat-prepare.outputs.matrix) }}
     runs-on: ubuntu-latest
     env:
       DNS_ADDRESS: 0
