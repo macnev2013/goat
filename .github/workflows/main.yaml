@@ -22,7 +22,7 @@ jobs:
         make install
 
     - name: Testing Directory Stucture
-      path: './terraform-provider-aws'
+      working-directory: './terraform-provider-aws'
       run: |
         ls
         pwd
