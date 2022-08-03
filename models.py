@@ -117,7 +117,6 @@ class TestSummary:
         else:
             self.scrape_tests()
             self.save()
-            print("Test Details Scraped.")
 
     def scrape_tests(self):
         if not os.path.exists(REPO_PATH):
