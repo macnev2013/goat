@@ -14,7 +14,7 @@ jobs:
         repository: hashicorp/terraform-provider-aws
         path: './terraform-provider-aws'
 
-    - name: Checkout Terraform AWS Provider
+    - name: Checkout GOAT
       uses: actions/checkout@v3
 
     - name: Install dependancies
@@ -22,6 +22,7 @@ jobs:
         make install
 
     - name: Testing Directory Stucture
+      path: './terraform-provider-aws'
       run: |
         ls
         pwd
