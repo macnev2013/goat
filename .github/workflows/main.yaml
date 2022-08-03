@@ -17,6 +17,12 @@ jobs:
     - name: Checkout Terraform AWS Provider
       uses: actions/checkout@v3
 
+    - name: Install dependancies
+      run: |
+        python -m virtualenv .venv
+        source .venv/bin/activate
+        make install
+
     - id: set-matrix
       run: echo "::set-output name=matrix::$(python main.py list-services)"
     outputs:
