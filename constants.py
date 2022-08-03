@@ -1,7 +1,7 @@
 import re
 import os
 
-ROOT_DIR = "/home/runner/work/goat/goat/terraform-provider-aws"
+ROOT_DIR = "."
 PICKLE_TEST_DETAILS_FILE = f"{ROOT_DIR}/testdetails.pickle"
 TEST_LIST_FILE = f"{ROOT_DIR}/test-list.yaml"
 TEST_REPORT_FILENAME = f"{ROOT_DIR}/report.html"
@@ -10,7 +10,7 @@ LOG_PATH = f"{ROOT_DIR}/logs"
 GO_TEST_REGEX = "^func TestAcc(.*)$"
 GO_PATTERN = re.compile(GO_TEST_REGEX)
 
-REPO_PATH="./terraform-provider-aws"
+REPO_PATH="/home/runner/work/goat/goat/terraform-provider-aws"
 TEST_DIR = f"{REPO_PATH}/internal/service"
 TEST_DIR_REGEX = f"{REPO_PATH}/internal/service/**/*_test.go"
 
