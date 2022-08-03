@@ -8,14 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+    - name: Checkout GOAT
+      uses: actions/checkout@v3
+
     - name: Checkout Terraform AWS Provider
       uses: actions/checkout@v3
       with:
         repository: hashicorp/terraform-provider-aws
         path: './terraform-provider-aws'
-
-    - name: Checkout GOAT
-      uses: actions/checkout@v3
 
     - name: Install dependancies
       run: |
