@@ -59,9 +59,18 @@ def get_details(service_name, test_file, test_name):
     test_manager.get_test_details(service_name, test_file, test_name)
     test_manager.save()
 
+@click.command(name="list-services", help="Get list of service")
+def list_services():
+    """Get list of service"""
+    test_manager = TestSummary()
+    services = test_manager.get_services_list()
+    print(services)
+    test_manager.save()
+
 
 cli.add_command(generate)
 cli.add_command(report)
 cli.add_command(run)
 cli.add_command(get_details)
+cli.add_command(list_services)
 cli()

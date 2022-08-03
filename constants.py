@@ -10,7 +10,7 @@ LOG_PATH = f"{ROOT_DIR}/logs"
 GO_TEST_REGEX = "^func TestAcc(.*)$"
 GO_PATTERN = re.compile(GO_TEST_REGEX)
 
-REPO_PATH="/Users/nevilmacwan/Documents/project/terraform-provider-aws"
+REPO_PATH="./terraform-provider-aws"
 TEST_DIR = f"{REPO_PATH}/internal/service"
 TEST_DIR_REGEX = f"{REPO_PATH}/internal/service/**/*_test.go"
 

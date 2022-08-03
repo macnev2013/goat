@@ -117,7 +117,6 @@ class TestSummary:
         else:
             self.scrape_tests()
             self.save()
-            self.generate_report()
             print("Test Details Scraped.")
 
     def scrape_tests(self):
@@ -224,3 +223,7 @@ class TestSummary:
     def get_test_details(self, service_name, test_filename, test_name):
         test_id = get_test_id(service_name, test_filename, test_name)
         print(self.test_details.get(test_id).__dict__)
+
+    def get_services_list(self):
+        self.generate_internal_dict()
+        return list(self.export_dict.keys())
