@@ -25,7 +25,7 @@ jobs:
       run: |
         ls
         pwd
-        ls -l terraform-provider-aws/internal/
+        ls -l terraform-provider-aws/internal/service/**/*_test.go
 
     - id: set-matrix
       run: echo "::set-output name=matrix::$(python main.py list-services)"
