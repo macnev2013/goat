@@ -64,8 +64,8 @@ def list_services():
     """Get list of service"""
     test_manager = TestSummary()
     services = test_manager.get_services_list()
-    print(services)
     test_manager.save()
+    print(services)
 
 
 cli.add_command(generate)

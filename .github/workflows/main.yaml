@@ -21,6 +21,12 @@ jobs:
       run: |
         make install
 
+    - name: Testing Directory Stucture
+      run: |
+        ls
+        pwd
+        ls -l terraform-provider-aws/internal/
+
     - id: set-matrix
       run: echo "::set-output name=matrix::$(python main.py list-services)"
     outputs:
