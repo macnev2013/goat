@@ -21,12 +21,6 @@ jobs:
       run: |
         make install
 
-    - name: Testing Directory Stucture
-      working-directory: './terraform-provider-aws'
-      run: |
-        ls
-        pwd
-
     - id: set-matrix
       run: echo "::set-output name=matrix::$(python main.py list-services)"
     outputs:
@@ -78,8 +72,6 @@ jobs:
         sudo apt install libsasl2-dev -y
         pip install --upgrade pip
         pip install pyyaml
-        python -m virtualenv .venv
-        source .venv/bin/activate
         make install
 
     - name: Installing Localstack Dependancies and Start Localstack
