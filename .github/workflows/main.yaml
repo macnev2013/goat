@@ -19,8 +19,6 @@ jobs:
 
     - name: Install dependancies
       run: |
-        python -m virtualenv .venv
-        source .venv/bin/activate
         make install
 
     - id: set-matrix

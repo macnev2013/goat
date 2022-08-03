@@ -3,3 +3,4 @@ test-list.yaml
 *.html
 logs/**
 __pycache__/**
+terraform-provider-aws
