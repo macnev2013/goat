@@ -1,7 +1,6 @@
 from constants import GO_TEST_CMD, TEST_DIR, TEST_ARG_PARAMS, LOCALSTACK_ENDPOINT, HTTP_SERVER_HOST, HTTP_SERVER_PORT
 import requests
 import http.server
-import socketserver
 
 def get_str_from_dict(dict_obj):
     str_obj = ""

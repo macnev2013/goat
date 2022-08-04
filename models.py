@@ -150,6 +150,7 @@ class TestSummary:
 
     def execute_tests(self, service, force_run):
         self.generate_internal_dict()
+        print("Creating execution pool...")
         pool = multiprocessing.dummy.Pool()
         pool_args = []
         for test_name in self.export_dict[service]:
@@ -160,6 +161,7 @@ class TestSummary:
                 continue
             pool_args.append(test_detail)
         try:
+            print(f"Added {len(pool_args)} tests in the pool")
             pool.map(TestDetail.execute, pool_args)
             print("Pool Exited.")
         finally:
