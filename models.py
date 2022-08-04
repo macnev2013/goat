@@ -114,7 +114,6 @@ class TestSummary:
         if os.path.exists(self.pickle_file):
             with open(self.pickle_file, "rb") as file:
                 self.test_details = pickle.load(file)
-                print("Test Details Loaded.")
         else:
             self.scrape_tests()
             self.save()

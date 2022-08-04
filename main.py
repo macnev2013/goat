@@ -32,21 +32,49 @@ def report():
 
 @click.command(name="run", help="Run tests for given services")
 @click.option("--services", "-s", default=SERVICES_TO_TEST, help="Services to test")
-@click.option("--force-run", "-f", is_flag=True, default=False,help="Run tests forcefully")
-@click.option("--test-list-file", "-t", default=TEST_LIST_FILE, help="File containing test list: ./test-list.yaml")
+@click.option(
+    "--force-run", "-f", is_flag=True, default=False, help="Run tests forcefully"
+)
+@click.option(
+    "--test-list-file",
+    "-t",
+    default=TEST_LIST_FILE,
+    help="File containing test list: ./test-list.yaml",
+)
 def run(services, force_run, test_list_file):
     """Run tests for given services"""
     print(f"Services to test: {services}")
     TEST_ENV_PARAMS.update(os.environ.copy())
     test_manager = TestSummary(test_list_file=test_list_file)
     if not check_health_status():
-        print("Localstack is not running. Please start localstack before running tests.")
+        print(
+            "Localstack is not running. Please start localstack before running tests."
+        )
         os._exit(1)
     print("Running tests...")
     services = [service for service in services.split(",") if len(service) > 0]
     for service in services:
         test_manager.execute_tests(service, force_run)
         test_manager.save()
+
+@click.command(name="run-services", help="Run tests for all services")
+@click.option("--services", "-s", default=SERVICES_TO_TEST, help="Services to test")
+def run_services(services):
+    """Run tests for all services"""
+    print(f"Services to test: {services}")
+    # TEST_ENV_PARAMS.update(os.environ.copy())
+    # test_manager = TestSummary()
+    # if not check_health_status():
+    #     print(
+    #         "Localstack is not running. Please start localstack before running tests."
+    #     )
+    #     os._exit(1)
+    # print("Running tests...")
+    # services = [service for service in services.split(",") if len(service) > 0]
+    # for service in services:
+    #     test_manager.execute_tests(service)
+    #     test_manager.save()
+
 
 
 @click.command(name="details", help="Get test details")
