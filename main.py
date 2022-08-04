@@ -58,28 +58,6 @@ def run(services, force_run, test_list_file):
         test_manager.save()
 
 
-@click.command(name="run-service", help="Run tests for given services")
-@click.option("--services", "-s", default=SERVICES_TO_TEST, help="Services to test")
-@click.option(
-    "--force-run", "-f", is_flag=True, default=False, help="Run tests forcefully"
-)
-def run_service(services, force_run):
-    """Run tests for given services"""
-    print(f"Services to test: {services}")
-    TEST_ENV_PARAMS.update(os.environ.copy())
-    test_manager = TestSummary()
-    # if not check_health_status():
-    #     print(
-    #         "Localstack is not running. Please start localstack before running tests."
-    #     )
-    #     os._exit(1)
-    print("Running tests...")
-    services = [service for service in services.split(",") if len(service) > 0]
-    for service in services:
-        test_manager.execute_tests(service, force_run)
-        test_manager.save()
-
-
 @click.command(name="details", help="Get test details")
 @click.option("--service-name", "-s", help="Service name for test")
 @click.option("--test-file", "-t", help="Test file name")
@@ -105,5 +83,4 @@ cli.add_command(report)
 cli.add_command(run)
 cli.add_command(get_details)
 cli.add_command(list_services)
-cli.add_command(run_service)
 cli()

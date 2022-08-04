@@ -86,6 +86,14 @@ jobs:
         make install
         make start &
 
+    - name: Check Localstack Endpoint
+      uses: jtalk/url-health-check-action@v2
+      with:
+        url: http://localhost:4566
+        max-attempts: 30
+        retry-delay: 5s
+        retry-all: true
+
     - name: Patch Terraform Provider
       working-directory: ./terraform-provider-aws
       run: |
@@ -103,4 +111,4 @@ jobs:
       run: python main.py scrape
 
     - name: Running Test Cases
-      run: python main.py run-service -s ${{ matrix.service }}
+      run: python main.py run -s ${{ matrix.service }} -f
