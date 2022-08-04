@@ -59,6 +59,7 @@ def get_details(service_name, test_file, test_name):
     test_manager.get_test_details(service_name, test_file, test_name)
     test_manager.save()
 
+
 @click.command(name="list-services", help="Get list of service")
 def list_services():
     """Get list of service"""

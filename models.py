@@ -9,6 +9,7 @@ import subprocess
 from colorama import Fore
 from constants import (
     REPO_PATH,
+    SERVICES_TO_TEST,
     TEST_DIR_REGEX,
     PICKLE_TEST_DETAILS_FILE,
     GO_PATTERN,
@@ -227,4 +228,5 @@ class TestSummary:
 
     def get_services_list(self):
         self.generate_internal_dict()
-        return list(self.export_dict.keys())
+        services = [service for service in self.export_dict.keys() if service in SERVICES_TO_TEST]
+        return services
