@@ -66,8 +66,8 @@ def run(services, force_run, test_list_file):
 def run_service(services, force_run):
     """Run tests for given services"""
     print(f"Services to test: {services}")
-    # TEST_ENV_PARAMS.update(os.environ.copy())
-    # test_manager = TestSummary()
+    TEST_ENV_PARAMS.update(os.environ.copy())
+    test_manager = TestSummary()
     # if not check_health_status():
     #     print(
     #         "Localstack is not running. Please start localstack before running tests."
