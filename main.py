@@ -68,16 +68,16 @@ def run_service(services, force_run):
     print(f"Services to test: {services}")
     TEST_ENV_PARAMS.update(os.environ.copy())
     test_manager = TestSummary()
-    if not check_health_status():
-        print(
-            "Localstack is not running. Please start localstack before running tests."
-        )
-        os._exit(1)
+    # if not check_health_status():
+    #     print(
+    #         "Localstack is not running. Please start localstack before running tests."
+    #     )
+    #     os._exit(1)
     print("Running tests...")
-    # services = [service for service in services.split(",") if len(service) > 0]
-    # for service in services:
-    #     test_manager.execute_tests(service, force_run)
-    #     test_manager.save()
+    services = [service for service in services.split(",") if len(service) > 0]
+    for service in services:
+        test_manager.execute_tests(service, force_run)
+        test_manager.save()
 
 
 @click.command(name="details", help="Get test details")
