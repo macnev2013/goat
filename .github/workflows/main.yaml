@@ -41,6 +41,10 @@ jobs:
 
     steps:
 
+    - name: Details
+      run: |
+        echo "Running test cases for ${{ matrix.service }}"
+
     - uses: actions/setup-go@v3
       with:
         go-version: 1.18.x
@@ -101,5 +105,6 @@ jobs:
 
     - name: Run Test Cases
       run: |
+        echo "Running test cases for ${{ matrix.service }}"
         python main.py scrape
         python main.py run -s ${{ matrix.service }}
