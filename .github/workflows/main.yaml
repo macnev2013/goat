@@ -103,4 +103,4 @@ jobs:
       run: python main.py scrape
 
     - name: Running Test Cases
-      run: python main.py run-services -s ${{ matrix.service }}
+      run: python main.py run-service -s ${{ matrix.service }}
