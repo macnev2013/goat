@@ -227,7 +227,11 @@ class TestSummary:
         test_id = get_test_id(service_name, test_filename, test_name)
         print(self.test_details.get(test_id).__dict__)
 
-    def get_services_list(self):
+    def get_services_list(self, all):
         self.generate_internal_dict()
-        services = [service for service in self.export_dict.keys() if service in SERVICES_TO_TEST]
+        services = []
+        if all:
+            services = list(self.export_dict.keys())
+        else:
+            services = [service for service in self.export_dict.keys() if service in SERVICES_TO_TEST]
         return services

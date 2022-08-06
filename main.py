@@ -70,10 +70,13 @@ def get_details(service_name, test_file, test_name):
 
 
 @click.command(name="list-services", help="Get list of service")
-def list_services():
+@click.option(
+    "--all", "-a", is_flag=True, default=False, help="Returns all services"
+)
+def list_services(all):
     """Get list of service"""
     test_manager = TestSummary()
-    services = test_manager.get_services_list()
+    services = test_manager.get_services_list(all)
     test_manager.save()
     print(services)
 

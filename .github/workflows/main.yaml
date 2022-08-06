@@ -27,6 +27,21 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
+    - name: Get Release Date
+      run: |
+        echo "RELEASE_DATE=`date '+%D'`" >> $GITHUB_ENV
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.RELEASE_DATE }}
+        release_name: Release ${{ env.RELEASE_DATE }}
+        draft: false
+        prerelease: false  
+
   goat:
     needs: goat-prepare
     strategy:
@@ -112,3 +127,22 @@ jobs:
 
     - name: Running Test Cases
       run: python main.py run -s ${{ matrix.service }} -f
+
+    - name: Generate Report
+      run: python main.py report
+
+    - name: Create ${{ matrix.service }} Zip file 
+      run: |
+        mv report.html report-${{ matrix.service }}.html
+        zip -r ${{ matrix.service }}.zip ./logs/${{ matrix.service }} report-${{ matrix.service }}.html
+
+    - name: Upload Release Asset - ${{ matrix.service }}
+      id: upload-release-asset-${{ matrix.service }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ matrix.service }}.zip
+        asset_name: ${{ matrix.service }}.zip
+        asset_content_type: application/zip
