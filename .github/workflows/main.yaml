@@ -35,8 +35,7 @@ jobs:
         tag_name: ${{ env.RELEASE_DATE }}
         release_name: Release ${{ env.RELEASE_DATE }}
         draft: false
-        prerelease: false  
-
+        prerelease: false
 
     - id: set-matrix
       run: echo "::set-output name=matrix::$(python main.py list-services)"
@@ -138,7 +137,7 @@ jobs:
         zip -r ${{ matrix.service }}.zip ./logs/${{ matrix.service }} report-${{ matrix.service }}.html
 
     - name: Upload Release Asset - ${{ matrix.service }}
-      id: upload-release-asset-${{ matrix.service }}
+      id: upload-release-asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
