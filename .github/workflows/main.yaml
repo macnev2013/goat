@@ -24,7 +24,7 @@ jobs:
 
     - name: Get Release Date
       run: |
-        echo "RELEASE_DATE=`date '+%D'`" >> $GITHUB_ENV
+        echo "RELEASE_DATE=`date '+%Y-%m-%d-%H-%M-%S'`" >> $GITHUB_ENV
 
     - name: Create Release
       id: create_release
