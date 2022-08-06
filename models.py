@@ -150,7 +150,7 @@ class TestSummary:
     def execute_tests(self, service, force_run):
         self.generate_internal_dict()
         print("Creating execution pool...")
-        pool = multiprocessing.dummy.Pool()
+        pool = multiprocessing.dummy.Pool(processes=4)
         pool_args = []
         for test_name in self.export_dict[service]:
             test_id = get_test_id(service, test_name)
@@ -171,11 +171,23 @@ class TestSummary:
 
     def generate_report(self):
         test_report = {}
+        summary = {}
         for test_id in self.test_details:
             test_detail = self.test_details.get(test_id)
+            if not summary.get(test_detail.service_name):
+                summary[test_detail.service_name] = {
+                    "passed": 0,
+                    "failed": 0,
+                    "total": 0,
+                    "completed": 0,
+                }
+
+            summary[test_detail.service_name]["total"] += 1
 
             if not test_detail.completed:
                 continue
+
+            summary[test_detail.service_name]["completed"] += 1
 
             if not test_report.get(test_detail.service_name):
                 test_report[test_detail.service_name] = {}
@@ -184,6 +196,10 @@ class TestSummary:
                 test_report[test_detail.service_name][test_detail.test_name] = {}
 
             if test_detail.completed:
+                if test_detail.return_code == 0:
+                    summary[test_detail.service_name]["passed"] += 1
+                else:
+                    summary[test_detail.service_name]["failed"] += 1
                 test_report[test_detail.service_name][test_detail.test_name][
                     "return_code"
                 ] = test_detail.return_code
@@ -201,6 +217,16 @@ class TestSummary:
         report.write(f"<body class='p-4'>")
         for service_name in test_report:
             report.write(f"<h3>{service_name}</h3>\n")
+
+            # report summary
+            report.write(f"<table border='1' class='table'>\n")
+            report.write(f"<tr><th>Total:</th><td>{summary[service_name]['total']}</td></tr>\n")
+            report.write(f"<tr><th>Passed:</th><td>{summary[service_name]['passed']}</td></tr>\n")
+            report.write(f"<tr><th>Failed:</th><td>{summary[service_name]['failed']}</td></tr>\n")
+            report.write(f"<tr><th>Completed:</th><td>{summary[service_name]['completed']}</td></tr>\n")
+            report.write(f"</table>\n")
+
+            # report tests
             report.write(f"<table border='1' class='table'>\n")
             report.write(
                 f"<tr><th>Test Name</th><th>Status</th><th>Duration</th><th>out</th><th>err</th></tr>\n"
@@ -226,6 +252,34 @@ class TestSummary:
     def get_test_details(self, service_name, test_filename, test_name):
         test_id = get_test_id(service_name, test_filename, test_name)
         print(self.test_details.get(test_id).__dict__)
+
+    def print_summary(self, service_name):
+        summary = {}
+        for test_id in self.test_details:
+            test_detail = self.test_details.get(test_id)
+            if service_name and test_detail.service_name != service_name:
+                continue
+            if not summary.get(test_detail.service_name):
+                summary[test_detail.service_name] = {
+                    "passed": 0,
+                    "failed": 0,
+                    "total": 0,
+                    "completed": 0,
+                }
+            summary[test_detail.service_name]["total"] += 1
+            if not test_detail.completed:
+                continue
+            summary[test_detail.service_name]["completed"] += 1
+            if test_detail.return_code == 0:
+                summary[test_detail.service_name]["passed"] += 1
+            else:
+                summary[test_detail.service_name]["failed"] += 1
+        for service in summary:
+            print(f"-----{service}-----")
+            print(f"Total: {summary[service]['total']}")
+            print(f"Completed: {summary[service]['completed']}")
+            print(f"Passed: {summary[service]['passed']}")
+            print(f"Failed: {summary[service]['failed']}")
 
     def get_services_list(self, all):
         self.generate_internal_dict()

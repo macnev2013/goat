@@ -1,3 +1,4 @@
+from email.policy import default
 import os
 from pydoc import cli
 from constants import TEST_ENV_PARAMS, SERVICES_TO_TEST, TEST_LIST_FILE
@@ -22,12 +23,20 @@ def generate():
 
 
 @click.command(name="report", help="Generate report from test details")
-def report():
+@click.option(
+    "--server",
+    "-s",
+    is_flag=True,
+    default=False,
+    help="Start a local server to view the report",
+)
+def report(server):
     """Generate report from test details"""
     TEST_ENV_PARAMS.update(os.environ.copy())
     test_manager = TestSummary()
     test_manager.generate_report()
-    run_report_server()
+    if server:
+        run_report_server()
 
 
 @click.command(name="run", help="Run tests for given services")
@@ -70,9 +79,7 @@ def get_details(service_name, test_file, test_name):
 
 
 @click.command(name="list-services", help="Get list of service")
-@click.option(
-    "--all", "-a", is_flag=True, default=False, help="Returns all services"
-)
+@click.option("--all", "-a", is_flag=True, default=False, help="Returns all services")
 def list_services(all):
     """Get list of service"""
     test_manager = TestSummary()
@@ -81,9 +88,18 @@ def list_services(all):
     print(services)
 
 
+@click.command(name="print-summary", help="Gets the summary of the tests")
+@click.option("--service-name", "-s", help="Service name for test")
+def print_summary(service_name):
+    """Gets the summary of the tests"""
+    test_manager = TestSummary()
+    test_manager.print_summary(service_name)
+
+
 cli.add_command(generate)
 cli.add_command(report)
 cli.add_command(run)
 cli.add_command(get_details)
 cli.add_command(list_services)
+cli.add_command(print_summary)
 cli()
