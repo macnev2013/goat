@@ -22,11 +22,6 @@ jobs:
       run: |
         make install
 
-    - id: set-matrix
-      run: echo "::set-output name=matrix::$(python main.py list-services)"
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-
     - name: Get Release Date
       run: |
         echo "RELEASE_DATE=`date '+%D'`" >> $GITHUB_ENV
@@ -41,6 +36,12 @@ jobs:
         release_name: Release ${{ env.RELEASE_DATE }}
         draft: false
         prerelease: false  
+
+
+    - id: set-matrix
+      run: echo "::set-output name=matrix::$(python main.py list-services)"
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   goat:
     needs: goat-prepare
