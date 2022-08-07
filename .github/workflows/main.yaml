@@ -150,7 +150,8 @@ jobs:
     - name: Create ${{ matrix.service }} Zip file 
       run: |
         mv report.html report-${{ matrix.service }}.html
-        zip -r ${{ matrix.service }}.zip ./logs/${{ matrix.service }} report-${{ matrix.service }}.html
+        mv testdetails.pickle testdetails-${{ matrix.service }}.pickle
+        zip -r ${{ matrix.service }}.zip ./logs/${{ matrix.service }} report-${{ matrix.service }}.html testdetails-${{ matrix.service }}.pickle
 
     - name: Download Upload URL
       uses: actions/download-artifact@v3
