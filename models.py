@@ -157,7 +157,7 @@ class TestSummary:
         self.generate_internal_dict()
         self.get_test_deps()
         print("Creating execution pool...")
-        pool = multiprocessing.dummy.Pool(processes=4)
+        pool = multiprocessing.dummy.Pool()
         pool_args = []
         for test_name in self.export_dict[service]:
             test_id = get_test_id(service, test_name)

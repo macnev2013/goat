@@ -171,3 +171,7 @@ jobs:
         asset_path: ./${{ matrix.service }}.zip
         asset_name: ${{ matrix.service }}.zip
         asset_content_type: application/zip
+
+    - name: Test Summary
+      run: |
+        python main.py print-summary -s ${{ matrix.service }}

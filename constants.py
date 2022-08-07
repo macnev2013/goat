@@ -23,7 +23,7 @@ TEST_ENV_PARAMS = {
 
 TEST_ARG_PARAMS = {
     '-v': '',
-    '-timeout': '15m',
+    '-timeout': '60m',
     '-count': '1',
 }
 
