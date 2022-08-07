@@ -18,7 +18,7 @@ from constants import (
     TEST_ENV_PARAMS,
     TEST_REPORT_FILENAME,
 )
-from utils import get_test_run_command
+from utils import get_test_dep_ins_command, get_test_run_command
 from utils import get_test_id
 import multiprocessing.dummy
 
@@ -146,9 +146,16 @@ class TestSummary:
                 if not self.export_dict.get(test.service_name):
                     self.export_dict[test.service_name] = []
                 self.export_dict[test.service_name].append(test.test_name)
+    
+    def get_test_deps(self):
+        command = get_test_dep_ins_command()
+        subprocess.run(
+            command, env=TEST_ENV_PARAMS, cwd=REPO_PATH
+        )
 
     def execute_tests(self, service, force_run):
         self.generate_internal_dict()
+        self.get_test_deps()
         print("Creating execution pool...")
         pool = multiprocessing.dummy.Pool(processes=4)
         pool_args = []

@@ -37,6 +37,22 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Creating Release Details
+      uses: DamianReeves/write-file-action@master
+      with:
+        path: ./upload-url.txt
+        contents: |
+          ${{ steps.create_release.outputs.upload_url }}
+        write-mode: overwrite
+
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: upload-url
+        path: |
+          ./upload-url.txt
+      
+
     - id: set-matrix
       run: echo "::set-output name=matrix::$(python main.py list-services)"
     outputs:
@@ -136,13 +152,22 @@ jobs:
         mv report.html report-${{ matrix.service }}.html
         zip -r ${{ matrix.service }}.zip ./logs/${{ matrix.service }} report-${{ matrix.service }}.html
 
+    - name: Download Upload URL
+      uses: actions/download-artifact@v3
+      with:
+        name: upload-url
+
+    - name: Get Release Details
+      run: |
+        echo "UPLOAD_URL=`cat upload-url.txt`" >> $GITHUB_ENV
+
     - name: Upload Release Asset - ${{ matrix.service }}
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: ./${{ matrix.service }}.zip
         asset_name: ${{ matrix.service }}.zip
         asset_content_type: application/zip
