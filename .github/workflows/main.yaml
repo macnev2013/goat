@@ -96,6 +96,23 @@ jobs:
         repository: hashicorp/terraform-provider-aws
         path: './terraform-provider-aws'
 
+    - name: Patch Terraform Provider
+      working-directory: ./terraform-provider-aws
+      run: |
+        git apply ../etc/tf-patch/0001-endpoints.patch
+
+    - name: Cache Go dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/terraform-provider-aws/go.sum') }}
+
+    - name: Installing Golang Dependancies
+      working-directory: ./terraform-provider-aws
+      run: go mod vendor
+
     - name: Cache Python .venv
       id: python-cache
       uses: actions/cache@v2
@@ -125,23 +142,6 @@ jobs:
         retry-delay: 5s
         retry-all: true
 
-    - name: Patch Terraform Provider
-      working-directory: ./terraform-provider-aws
-      run: |
-        git apply ../etc/tf-patch/0001-endpoints.patch
-
-    - name: Cache Go dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/go/pkg/mod
-          ~/.cache/go-build
-        key: ${{ runner.os }}-go-${{ hashFiles('**/terraform-provider-aws/go.sum') }}
-
-    - name: Installing Golang Dependancies
-      working-directory: ./terraform-provider-aws
-      run: |
-        go mod vendor
 
     - name: Test Cases Scrape
       run: python main.py scrape
