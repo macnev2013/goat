@@ -119,7 +119,7 @@ class TestSummary:
         else:
             self.test_list_file = TEST_LIST_FILE
         self.load()
-        self.pool = multiprocessing.dummy.Pool(processes=1)
+        self.pool = multiprocessing.dummy.Pool(processes=4)
 
         signal.signal(signal.SIGINT, self.termination_handler)
         signal.signal(signal.SIGTERM, self.termination_handler)
@@ -191,7 +191,6 @@ class TestSummary:
                     pool_args.append(test_detail)
                     continue
             pool_args.append(test_detail)
-            break
         try:
             print(f"Added {len(pool_args)} tests in the pool")
             self.pool.map(TestDetail.execute, pool_args)
