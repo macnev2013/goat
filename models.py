@@ -191,6 +191,7 @@ class TestSummary:
                     pool_args.append(test_detail)
                     continue
             pool_args.append(test_detail)
+            break
         try:
             print(f"Added {len(pool_args)} tests in the pool")
             self.pool.map(TestDetail.execute, pool_args)

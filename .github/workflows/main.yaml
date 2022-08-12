@@ -111,7 +111,9 @@ jobs:
 
     - name: Installing Golang Dependancies
       working-directory: ./terraform-provider-aws
-      run: go mod vendor
+      run: |
+        go mod vendor
+        go build
 
     - name: Cache Python .venv
       id: python-cache
@@ -141,7 +143,6 @@ jobs:
         max-attempts: 30
         retry-delay: 5s
         retry-all: true
-
 
     - name: Test Cases Scrape
       run: python main.py scrape
