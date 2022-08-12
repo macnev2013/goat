@@ -119,7 +119,7 @@ class TestSummary:
         else:
             self.test_list_file = TEST_LIST_FILE
         self.load()
-        self.pool = multiprocessing.dummy.Pool(processes=1)
+        self.pool = multiprocessing.dummy.Pool(processes=4)
 
         signal.signal(signal.SIGINT, self.termination_handler)
         signal.signal(signal.SIGTERM, self.termination_handler)
@@ -180,6 +180,27 @@ class TestSummary:
         self.generate_internal_dict()
         print("Creating execution pool...")
         pool_args = []
+        
+        # this for loop is just for increasing speed of execution of in CI
+        init_start = time.time()
+        print("Speeding up test init...")
+        for test_name in self.export_dict[service]:
+            test_id = get_test_id(service, test_name)
+            test_detail = self.test_details.get(test_id)
+            command = get_test_run_command(test_detail.service_name, test_detail.test_name)
+            TEST_ENV_PARAMS.update(os.environ.copy())
+            subprocess.run(
+                command,
+                env=TEST_ENV_PARAMS,
+                cwd=REPO_PATH,
+            )
+            break
+
+        init_end = time.time()
+        init_duration = time.strftime("%Mm %Ss", time.gmtime(init_end - init_start))
+        print(f"Test init speed up complete {init_duration}.")
+        
+
         for test_name in self.export_dict[service]:
             test_id = get_test_id(service, test_name)
             test_detail = self.test_details.get(test_id)

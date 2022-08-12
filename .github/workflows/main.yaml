@@ -111,9 +111,7 @@ jobs:
 
     - name: Installing Golang Dependancies
       working-directory: ./terraform-provider-aws
-      run: |
-        go mod vendor
-        go build
+      run: go mod vendor
 
     - name: Cache Python .venv
       id: python-cache
