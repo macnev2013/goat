@@ -119,7 +119,7 @@ class TestSummary:
         else:
             self.test_list_file = TEST_LIST_FILE
         self.load()
-        self.pool = multiprocessing.dummy.Pool(processes=8)
+        self.pool = multiprocessing.dummy.Pool()
 
         signal.signal(signal.SIGINT, self.termination_handler)
         signal.signal(signal.SIGTERM, self.termination_handler)
