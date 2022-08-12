@@ -4,6 +4,7 @@ import pickle
 import re
 import os
 import signal
+import sys
 import time
 import subprocess
 from colorama import Fore
@@ -17,8 +18,9 @@ from constants import (
     LOG_PATH,
     TEST_ENV_PARAMS,
     TEST_REPORT_FILENAME,
+    PROCESS_POOL,
 )
-from utils import get_test_dep_ins_command, get_test_run_command
+from utils import get_test_run_command
 from utils import get_test_id
 import multiprocessing.dummy
 
@@ -66,10 +68,19 @@ class TestDetail:
         stdout = open(f"{self.logfile_path}/{self.test_name}_stdout.log", "w")
         stderr = open(f"{self.logfile_path}/{self.test_name}_stderr.log", "w")
         TEST_ENV_PARAMS.update(os.environ.copy())
-        results = subprocess.run(
-            command, env=TEST_ENV_PARAMS, stdout=stdout, stderr=stderr, cwd=REPO_PATH
+        process = subprocess.Popen(
+            command,
+            env=TEST_ENV_PARAMS,
+            stdout=stdout,
+            stderr=stderr,
+            cwd=REPO_PATH,
         )
-        self.return_code = results.returncode
+        test_id = get_test_id(self.service_name, self.test_name)
+        PROCESS_POOL[test_id] = process
+        process.wait()
+        stdout.close()
+        stderr.close()
+        self.return_code = process.returncode
 
     def pre_print(self):
         print(f"{Fore.BLUE}[RUNNING] :: {self.test_name}")
@@ -94,9 +105,12 @@ class TestDetail:
         except KeyboardInterrupt:
             pass
 
+
 class TestSummary:
     test_details = {}
     export_dict = {}
+    summary = {}
+    report = {}
 
     def __init__(self, test_list_file=None):
         self.pickle_file = PICKLE_TEST_DETAILS_FILE
@@ -105,6 +119,21 @@ class TestSummary:
         else:
             self.test_list_file = TEST_LIST_FILE
         self.load()
+        self.pool = multiprocessing.dummy.Pool(processes=4)
+
+        signal.signal(signal.SIGINT, self.termination_handler)
+        signal.signal(signal.SIGTERM, self.termination_handler)
+
+    def termination_handler(self, signal, frame):
+        print(f"Exiting gracefully with signal {signal}")
+        self.pool.close()
+        self.pool.terminate()
+        for test_id in PROCESS_POOL:
+            if PROCESS_POOL[test_id]:
+                print(f"{Fore.RED}[ABORTED]  :: {test_id}")
+                PROCESS_POOL[test_id].kill()
+        print("All processes are killed...")
+        sys.exit(0)
 
     def save(self):
         with open(self.pickle_file, "wb") as file:
@@ -146,18 +175,10 @@ class TestSummary:
                 if not self.export_dict.get(test.service_name):
                     self.export_dict[test.service_name] = []
                 self.export_dict[test.service_name].append(test.test_name)
-    
-    def get_test_deps(self):
-        command = get_test_dep_ins_command()
-        subprocess.run(
-            command, env=TEST_ENV_PARAMS, cwd=REPO_PATH
-        )
 
-    def execute_tests(self, service, force_run):
+    def execute_tests(self, service, pattern=None, force_run=False):
         self.generate_internal_dict()
-        self.get_test_deps()
         print("Creating execution pool...")
-        pool = multiprocessing.dummy.Pool()
         pool_args = []
         for test_name in self.export_dict[service]:
             test_id = get_test_id(service, test_name)
@@ -165,72 +186,96 @@ class TestSummary:
             if self.test_details[test_id].completed and not force_run:
                 print(f"[SKIP]    :: {test_detail.test_name}")
                 continue
+            if service and service == test_detail.service_name and pattern:
+                if re.search(pattern, test_name):
+                    pool_args.append(test_detail)
+                    continue
             pool_args.append(test_detail)
         try:
             print(f"Added {len(pool_args)} tests in the pool")
-            pool.map(TestDetail.execute, pool_args)
+            self.pool.map(TestDetail.execute, pool_args)
             print("Pool Exited.")
-        finally:
-            pool.close()
-            pool.terminate()
+        except Exception as e:
+            print("Exception - Pool Exited due to : ", e)
+            self.pool.close()
+            self.pool.terminate()
             self.save()
-            print("Test Details Saved.")
+            sys.exit(1)
+        finally:
+            self.pool.close()
+            self.pool.terminate()
+            self.save()
+            sys.exit(0)
 
-    def generate_report(self):
-        test_report = {}
-        summary = {}
+    def generate_summary_dict(self):
         for test_id in self.test_details:
             test_detail = self.test_details.get(test_id)
-            if not summary.get(test_detail.service_name):
-                summary[test_detail.service_name] = {
+            if not self.summary.get(test_detail.service_name):
+                self.summary[test_detail.service_name] = {
                     "passed": 0,
                     "failed": 0,
                     "total": 0,
                     "completed": 0,
                 }
+            self.summary[test_detail.service_name]["total"] += 1
+            if not test_detail.completed:
+                continue
+            self.summary[test_detail.service_name]["completed"] += 1
+            if test_detail.return_code == 0:
+                self.summary[test_detail.service_name]["passed"] += 1
+            else:
+                self.summary[test_detail.service_name]["failed"] += 1
 
-            summary[test_detail.service_name]["total"] += 1
+    def generate_report_dict(self):
+        for test_id in self.test_details:
+            test_detail = self.test_details.get(test_id)
 
             if not test_detail.completed:
                 continue
 
-            summary[test_detail.service_name]["completed"] += 1
+            if not self.report.get(test_detail.service_name):
+                self.report[test_detail.service_name] = {}
 
-            if not test_report.get(test_detail.service_name):
-                test_report[test_detail.service_name] = {}
-
-            if not test_report[test_detail.service_name].get(test_detail.test_name):
-                test_report[test_detail.service_name][test_detail.test_name] = {}
+            if not self.report[test_detail.service_name].get(test_detail.test_name):
+                self.report[test_detail.service_name][test_detail.test_name] = {}
 
             if test_detail.completed:
-                if test_detail.return_code == 0:
-                    summary[test_detail.service_name]["passed"] += 1
-                else:
-                    summary[test_detail.service_name]["failed"] += 1
-                test_report[test_detail.service_name][test_detail.test_name][
+                self.report[test_detail.service_name][test_detail.test_name][
                     "return_code"
                 ] = test_detail.return_code
-                test_report[test_detail.service_name][test_detail.test_name][
+                self.report[test_detail.service_name][test_detail.test_name][
                     "elapsed_time"
                 ] = test_detail.elapsed_time
-                test_report[test_detail.service_name][test_detail.test_name][
+                self.report[test_detail.service_name][test_detail.test_name][
                     "process_elapsed_time"
                 ] = test_detail.process_elapsed_time
+
+    def generate_report(self):
+        self.generate_report_dict()
+        self.generate_summary_dict()
 
         report = open(TEST_REPORT_FILENAME, "w")
         report.write(
             f"""<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">\n"""
         )
         report.write(f"<body class='p-4'>")
-        for service_name in test_report:
+        for service_name in self.report:
             report.write(f"<h3>{service_name}</h3>\n")
 
             # report summary
             report.write(f"<table border='1' class='table'>\n")
-            report.write(f"<tr><th>Total:</th><td>{summary[service_name]['total']}</td></tr>\n")
-            report.write(f"<tr><th>Passed:</th><td>{summary[service_name]['passed']}</td></tr>\n")
-            report.write(f"<tr><th>Failed:</th><td>{summary[service_name]['failed']}</td></tr>\n")
-            report.write(f"<tr><th>Completed:</th><td>{summary[service_name]['completed']}</td></tr>\n")
+            report.write(
+                f"<tr><th>Total:</th><td>{self.summary[service_name]['total']}</td></tr>\n"
+            )
+            report.write(
+                f"<tr><th>Passed:</th><td>{self.summary[service_name]['passed']}</td></tr>\n"
+            )
+            report.write(
+                f"<tr><th>Failed:</th><td>{self.summary[service_name]['failed']}</td></tr>\n"
+            )
+            report.write(
+                f"<tr><th>Completed:</th><td>{self.summary[service_name]['completed']}</td></tr>\n"
+            )
             report.write(f"</table>\n")
 
             # report tests
@@ -238,7 +283,7 @@ class TestSummary:
             report.write(
                 f"<tr><th>Test Name</th><th>Status</th><th>Duration</th><th>out</th><th>err</th></tr>\n"
             )
-            for test_name in test_report[service_name]:
+            for test_name in self.report[service_name]:
                 test_id = get_test_id(service_name, test_name)
                 test_detail = self.test_details.get(test_id)
 
@@ -261,32 +306,15 @@ class TestSummary:
         print(self.test_details.get(test_id).__dict__)
 
     def print_summary(self, service_name):
-        summary = {}
-        for test_id in self.test_details:
-            test_detail = self.test_details.get(test_id)
-            if service_name and test_detail.service_name != service_name:
+        self.generate_summary_dict()
+        for service in self.summary:
+            if service_name and service_name != service:
                 continue
-            if not summary.get(test_detail.service_name):
-                summary[test_detail.service_name] = {
-                    "passed": 0,
-                    "failed": 0,
-                    "total": 0,
-                    "completed": 0,
-                }
-            summary[test_detail.service_name]["total"] += 1
-            if not test_detail.completed:
-                continue
-            summary[test_detail.service_name]["completed"] += 1
-            if test_detail.return_code == 0:
-                summary[test_detail.service_name]["passed"] += 1
-            else:
-                summary[test_detail.service_name]["failed"] += 1
-        for service in summary:
             print(f"-----{service}-----")
-            print(f"Total: {summary[service]['total']}")
-            print(f"Completed: {summary[service]['completed']}")
-            print(f"Passed: {summary[service]['passed']}")
-            print(f"Failed: {summary[service]['failed']}")
+            print(f"Total: {self.summary[service]['total']}")
+            print(f"Completed: {self.summary[service]['completed']}")
+            print(f"Passed: {self.summary[service]['passed']}")
+            print(f"Failed: {self.summary[service]['failed']}")
 
     def get_services_list(self, all):
         self.generate_internal_dict()
@@ -294,5 +322,19 @@ class TestSummary:
         if all:
             services = list(self.export_dict.keys())
         else:
-            services = [service for service in self.export_dict.keys() if service in SERVICES_TO_TEST]
+            services = [
+                service
+                for service in self.export_dict.keys()
+                if service in SERVICES_TO_TEST
+            ]
         return services
+
+    def get_yaml(self, output_file):
+        self.generate_report_dict()
+        file = open(output_file, "w")
+        for services in self.report:
+            file.write(f"{services}:\n")
+            for test_name in self.report[services]:
+                if self.report[services][test_name]["return_code"] == 0:
+                    file.write(f"    - TestAcc{test_name}\n")
+        file.close()

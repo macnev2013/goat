@@ -50,21 +50,27 @@ def report(server):
     default=TEST_LIST_FILE,
     help="File containing test list: ./test-list.yaml",
 )
-def run(services, force_run, test_list_file):
+@click.option(
+    "--pattern",
+    "-p",
+    help="Pattern to match test names against",
+)
+def run(services, force_run, test_list_file, pattern):
     """Run tests for given services"""
     print(f"Services to test: {services}")
     TEST_ENV_PARAMS.update(os.environ.copy())
-    test_manager = TestSummary(test_list_file=test_list_file)
     if not check_health_status():
         print(
             "Localstack is not running. Please start localstack before running tests."
         )
         os._exit(1)
+    test_manager = TestSummary(test_list_file=test_list_file)
     print("Running tests...")
     services = [service for service in services.split(",") if len(service) > 0]
     for service in services:
-        test_manager.execute_tests(service, force_run)
-        test_manager.save()
+        test_manager.execute_tests(
+            service=service, pattern=pattern, force_run=force_run
+        )
 
 
 @click.command(name="details", help="Get test details")
@@ -96,10 +102,19 @@ def print_summary(service_name):
     test_manager.print_summary(service_name)
 
 
+@click.command(name="get-yaml", help="Gets the yaml of the tests")
+@click.option("--output-file", "-o", help="Name of output file")
+def get_yaml(output_file):
+    """Gets the yaml of the tests"""
+    test_manager = TestSummary()
+    test_manager.get_yaml(output_file)
+
+
 cli.add_command(generate)
 cli.add_command(report)
 cli.add_command(run)
 cli.add_command(get_details)
 cli.add_command(list_services)
 cli.add_command(print_summary)
+cli.add_command(get_yaml)
 cli()

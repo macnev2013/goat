@@ -2,7 +2,7 @@ import re
 import os
 
 ROOT_DIR = "."
-PICKLE_TEST_DETAILS_FILE = f"{ROOT_DIR}/testdetails.pickle"
+PICKLE_TEST_DETAILS_FILE = f"{ROOT_DIR}/save.pickle"
 TEST_LIST_FILE = f"{ROOT_DIR}/test-list.yaml"
 TEST_REPORT_FILENAME = f"{ROOT_DIR}/report.html"
 LOG_PATH = f"{ROOT_DIR}/logs"
@@ -34,3 +34,5 @@ SERVICES_TO_TEST = ["s3", "ec2", "route53", "route53resolver"]
 
 HTTP_SERVER_HOST = "localhost"
 HTTP_SERVER_PORT = 8000
+
+PROCESS_POOL = {}

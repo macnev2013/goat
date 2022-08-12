@@ -4,3 +4,4 @@ test-list.yaml
 logs/**
 __pycache__/**
 terraform-provider-aws
+generated/**

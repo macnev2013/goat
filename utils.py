@@ -18,10 +18,6 @@ def get_test_run_command(service_name, test_name):
     command = f"{GO_TEST_CMD} {TEST_DIR}/{service_name}/ {get_str_from_dict(TEST_ARG_PARAMS)} -run {test_name}"
     return command.split(" ")
 
-def get_test_dep_ins_command():
-    command = "go mod vendor"
-    return command.split(" ")
-
 def check_health_status():
     try:
         response = requests.get(LOCALSTACK_ENDPOINT)
