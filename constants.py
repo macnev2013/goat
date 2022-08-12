@@ -30,7 +30,7 @@ TEST_ARG_PARAMS = {
 GO_TEST_CMD = "go test"
 
 LOCALSTACK_ENDPOINT = "http://localhost:4566"
-SERVICES_TO_TEST = ["s3", "ec2", "route53", "route53resolver"]
+SERVICES_TO_TEST = ["route53resolver"]
 
 HTTP_SERVER_HOST = "localhost"
 HTTP_SERVER_PORT = 8000

@@ -138,6 +138,11 @@ jobs:
           ~/.cache/go-build
         key: ${{ runner.os }}-go-${{ hashFiles('**/terraform-provider-aws/go.sum') }}
 
+    - name: Installing Golang Dependancies
+      working-directory: ./terraform-provider-aws
+      run: |
+        go mod vendor
+
     - name: Test Cases Scrape
       run: python main.py scrape
 
@@ -146,6 +151,9 @@ jobs:
 
     - name: Generate Report
       run: python main.py report
+
+    - name: Test Summary
+      run: python main.py print-summary -s ${{ matrix.service }}
 
     - name: Create ${{ matrix.service }} Zip file 
       run: |
@@ -172,7 +180,3 @@ jobs:
         asset_path: ./${{ matrix.service }}.zip
         asset_name: ${{ matrix.service }}.zip
         asset_content_type: application/zip
-
-    - name: Test Summary
-      run: |
-        python main.py print-summary -s ${{ matrix.service }}
