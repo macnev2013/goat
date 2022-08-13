@@ -3,7 +3,7 @@ import glob
 import re
 
 TEST_SERVICES = ["s3", "ec2", "route53", "route53resolver"]
-REPO_PATH = "../terraform-provider-aws"
+REPO_PATH = "./terraform-provider-aws"
 TEST_DIR_REGEX = f"{REPO_PATH}/internal/service/**/*_test.go"
 GO_TEST_REGEX = "^func TestAcc(.*)$"
 GO_PATTERN = re.compile(GO_TEST_REGEX)
