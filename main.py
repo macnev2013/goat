@@ -110,6 +110,21 @@ def get_yaml(output_file):
     test_manager.get_yaml(output_file)
 
 
+@click.command(name="list", help="List down the test cases")
+@click.option("--pattern", "-p", help="patterns in the test you want to search for")
+def list_tests(pattern):
+    """List down the test cases"""
+    test_manager = TestSummary()
+    test_manager.list_tests(pattern)
+
+@click.command(name="local", help="runs tests for local execution")
+@click.option("--pattern", "-p", help="patterns in the test you want to run")
+def local(pattern):
+    """runs tests for local execution"""
+    test_manager = TestSummary()
+    test_manager.local(pattern)
+
+
 cli.add_command(generate)
 cli.add_command(report)
 cli.add_command(run)
@@ -117,4 +132,6 @@ cli.add_command(get_details)
 cli.add_command(list_services)
 cli.add_command(print_summary)
 cli.add_command(get_yaml)
+cli.add_command(list_tests)
+cli.add_command(local)
 cli()

@@ -119,7 +119,7 @@ class TestSummary:
         else:
             self.test_list_file = TEST_LIST_FILE
         self.load()
-        self.pool = multiprocessing.dummy.Pool(processes=4)
+        self.pool = multiprocessing.dummy.Pool(processes=8)
 
         signal.signal(signal.SIGINT, self.termination_handler)
         signal.signal(signal.SIGTERM, self.termination_handler)
@@ -359,3 +359,15 @@ class TestSummary:
                 if self.report[services][test_name]["return_code"] == 0:
                     file.write(f"    - TestAcc{test_name}\n")
         file.close()
+
+    def list_tests(self, pattern):
+        for test_id in self.test_details:
+            test_detail = self.test_details[test_id]
+            if pattern in test_detail.test_name:
+                print(test_detail.test_name)
+
+    def local(self, pattern):
+        for test_id in self.test_details:
+            test_detail = self.test_details[test_id]
+            if pattern in test_detail.test_name:
+                test_detail.execute()

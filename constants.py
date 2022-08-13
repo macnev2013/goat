@@ -19,6 +19,7 @@ TEST_ENV_PARAMS = {
     'AWS_ACCESS_KEY_ID': 'test',
     'AWS_SECRET_ACCESS_KEY': 'test',
     'TF_ACC': 'true',
+    'TF_LOG': 'trace'
 }
 
 TEST_ARG_PARAMS = {
